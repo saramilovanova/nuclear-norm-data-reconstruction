@@ -9,6 +9,11 @@ venv/
 # Jupyter
 .ipynb_checkpoints/
 
+# Data and generated outputs
+data/raw/
+data/interim/
+data/processed/
+
 # OS
 .DS_Store
 Thumbs.db
