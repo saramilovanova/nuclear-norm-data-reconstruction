@@ -49,3 +49,15 @@ Create the conda environment:
 ```bash
 conda env create -f environment.yml
 conda activate nuclear-norm-thesis
+```
+
+## References
+
+Key references used in this work include:
+
+- Aharon, Elad, Bruckstein (2006) – k-SVD 
+- Cai, Candès, Shen (2010) – Singular Value Thresholding (adapted from the original MATLAB code by Candès and Becker, available at https://candes.su.domains/software/svt/code.html)
+- Gavish & Donoho (2017) – Optimal Shrinkage
+- Scetbon, Elad, Milanfar (2021) – Deep k-SVD
+- Shanmugam & Kalyani (2023) – Learned SVT
+- Scarvelis & Solomon (2024) – Jacobian Nuclear Norm Regularization

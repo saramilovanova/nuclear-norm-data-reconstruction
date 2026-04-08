@@ -2,34 +2,48 @@ import numpy as np
 from scipy.sparse.linalg import svds
 
 
-def svt(matrix_shape, Omega, b, tau, delta, max_iter=200, tol=1e-4):
+def svt(matrix_shape, Omega, b, tau, delta, max_iter=1000, tol=1e-4):
     """
-    Singular Value Thresholding (SVT) algorithm
+    Singular Value Thresholding (SVT) algorithm for matrix completion and denoising.
 
     - Finds the minimum of   tau ||X||_* + .5 || X ||_F^2
     - subject to P_Omega(X) = P_Omega(M)
 
     Parameters:
-        matrix_shape: (n1, n2)
-        Omega: indices of observed entries (tuple of arrays)
-        b: observed values
-        tau: threshold parameter
-        delta: step size
-        max_iter: maximum number of iterations
-        tol: convergence tolerance
+        matrix_shape: tuple
+            Shape of the matrix (n1, n2)
+        Omega: tuple of arrays
+            Indices of observed entries
+        b: array
+            Observed values at Omega
+        tau: float
+            threshold parameter
+        delta: float
+            step size
+        max_iter: int
+            maximum number of iterations
+        tol: float
+            convergence tolerance
+
+    Returns:
+        X: array
+            Reconstructed matrix
+        history: dict
+            Dictionary containing convergence history (residuals, ranks)
     """
 
     n1, n2 = matrix_shape
 
-    # Initialize Y
+    # Projection matrix of observations
     Y = np.zeros((n1, n2))
     Y[Omega] = b
 
-    norm_b = np.linalg.norm(b) + 1e-12  # avoid division by zero
+    # spectral norm initialization
+    norm2 = np.linalg.norm(Y, 2)
+    k0 = int(np.ceil(tau / (delta * norm2)))
+    Y *= k0 * delta
 
-    # --- k0 initialization ---
-    # k0 = int(np.ceil(tau / (delta * norm_b)))
-    # Y[Omega] = k0 * delta * b
+    norm_b = np.linalg.norm(b) + 1e-8  # to avoid division by zero in relative error
 
     history = {"residual": [], "rank": []}
 
@@ -59,7 +73,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=200, tol=1e-4):
         # X = (U[:, :rank] * S_thresh[:rank]) @ Vt[:rank, :]
 
         if rank == 0:
-            X = np.zeros_like(Y)
+            X = np.zeros((n1, n2))
         else:
             X = (U[:, :rank] * S_thresh[:rank]) @ Vt[:rank, :]
 
@@ -70,6 +84,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=200, tol=1e-4):
 
         history["residual"].append(rel_error)
         history["rank"].append(rank)
+        print(f"iter {k}, rank {rank}, residual {rel_error:.5f}")
 
         # Check convergence
         if rel_error < tol:
