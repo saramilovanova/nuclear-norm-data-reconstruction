@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse.linalg import svds
 
 
-def svt(matrix_shape, Omega, b, tau, delta, max_iter=1000, tol=1e-4):
+def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
     """
     Singular Value Thresholding (SVT) algorithm for matrix completion and denoising.
 
@@ -84,7 +84,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=1000, tol=1e-4):
 
         history["residual"].append(rel_error)
         history["rank"].append(rank)
-        print(f"iter {k}, rank {rank}, residual {rel_error:.5f}")
+        # print(f"iter {k}, rank {rank}, residual {rel_error:.5f}")
 
         # Check convergence
         if rel_error < tol:
