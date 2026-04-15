@@ -27,7 +27,8 @@ RESULTS_PATH.mkdir(parents=True, exist_ok=True)
 
 def run_reconstruction_experiment(X, sparsity=0.2):
 
-    mask = create_mask(X.shape, sparsity, seed=SEED)
+    observed_fraction = 1 - sparsity
+    mask = create_mask(X.shape, observed_fraction, seed=SEED)
     Omega, b = apply_mask(X, mask)
 
     # print("---- DEBUG ----")
@@ -37,12 +38,12 @@ def run_reconstruction_experiment(X, sparsity=0.2):
 
     n1, n2 = X.shape
     tau = TAU_FACTOR * np.sqrt(n1 * n2)
-    delta = DELTA_FACTOR / sparsity
+    delta = DELTA_FACTOR / observed_fraction
 
     X_rec, _ = svt((n1, n2), Omega, b, tau, delta)
 
     # print(
-    #     "Reconstruction for {}% observed entries:".format(int(sparsity * 100))
+    #     "Reconstruction for {}% observed entries:".format(int(observed_fraction * 100))
     # )
     print("MSE:", mse(X, X_rec))
     print("PSNR:", psnr(X, X_rec))

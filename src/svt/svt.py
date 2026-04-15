@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse.linalg import svds
 
 
-def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
+def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-5):
     """
     Singular Value Thresholding (SVT) algorithm for matrix completion and denoising.
 
@@ -36,18 +36,23 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
 
     # Projection matrix of observations
     Y = np.zeros((n1, n2))
-    Y[Omega] = b
+    # Y[Omega] = b
 
     # spectral norm initialization
-    norm2 = np.linalg.norm(Y, 2)
-    k0 = int(np.ceil(tau / (delta * norm2)))
-    Y *= k0 * delta
+    # norm2 = np.linalg.norm(Y, 2)
+    # k0 = int(np.ceil(tau / (delta * norm2)))
+    # print(f"Spectral norm of Y: {norm2:.4f}, initial k0: {k0}")
+    # print(f"Shape of Y: {Y.shape}")
+    # Y *= k0 * delta
+    # print(f"Initial dual variable Y scaled by {k0 * delta:.4f}")
+    # print("Shape of Y after scaling:", Y.shape)
 
-    norm_b = np.linalg.norm(b) + 1e-8  # to avoid division by zero in relative error
+    # norm_b = np.linalg.norm(b) + 1e-8  # to avoid division by zero in relative error
 
     history = {"residual": [], "rank": []}
-
+    # min_iter = 100
     # r = 10  # initial rank
+    # r_max = 100
 
     for k in range(max_iter):
 
@@ -55,8 +60,6 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
         U, S, Vt = np.linalg.svd(Y, full_matrices=False)
         # --- truncated SVD ---
         # U, S, Vt = svds(Y, k=r, which="LM")
-
-        # --- sort singular values ---
         # idx = np.argsort(S)[::-1]
         # S = S[idx]
         # U = U[:, idx]
@@ -68,10 +71,6 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
 
         rank = np.sum(S_thresh > 0)
 
-        # X = U @ np.diag(S_thresh) @ Vt
-        # Efficient reconstruction (avoid full diag)
-        # X = (U[:, :rank] * S_thresh[:rank]) @ Vt[:rank, :]
-
         if rank == 0:
             X = np.zeros((n1, n2))
         else:
@@ -80,11 +79,11 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
         # --- Residual ---
         X_Omega = X[Omega]
         residual = b - X_Omega
-        rel_error = np.linalg.norm(residual) / norm_b
+        rel_error = np.linalg.norm(residual) / (np.linalg.norm(b) + 1e-12)
 
         history["residual"].append(rel_error)
         history["rank"].append(rank)
-        # print(f"iter {k}, rank {rank}, residual {rel_error:.5f}")
+        # print(f"iter {k}, rank {rank}, residual {rel_error:.6f}")
 
         # Check convergence
         if rel_error < tol:
@@ -94,7 +93,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-4):
         Y[Omega] += delta * residual
 
         # --- increase rank if needed ---
-        # if S[-1] > tau and r < min(n1, n2):
+        # if rank >= r and r < min(n1, n2):
         #     r = min(r * 2, min(n1, n2))
 
     return X, history
