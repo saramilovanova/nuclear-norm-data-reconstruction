@@ -50,20 +50,11 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-5):
     # norm_b = np.linalg.norm(b) + 1e-8  # to avoid division by zero in relative error
 
     history = {"residual": [], "rank": []}
-    # min_iter = 100
-    # r = 10  # initial rank
-    # r_max = 100
 
     for k in range(max_iter):
 
         # --- SVD ---
         U, S, Vt = np.linalg.svd(Y, full_matrices=False)
-        # --- truncated SVD ---
-        # U, S, Vt = svds(Y, k=r, which="LM")
-        # idx = np.argsort(S)[::-1]
-        # S = S[idx]
-        # U = U[:, idx]
-        # Vt = Vt[idx, :]
 
         # --- Soft-thresholding ---
         # Shrink singular values: max(sigma_i - tau, 0)
@@ -74,7 +65,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-5):
         if rank == 0:
             X = np.zeros((n1, n2))
         else:
-            X = (U[:, :rank] * S_thresh[:rank]) @ Vt[:rank, :]
+            X = U[:, :rank] @ np.diag(S_thresh[:rank]) @ Vt[:rank, :]
 
         # --- Residual ---
         X_Omega = X[Omega]
@@ -87,6 +78,9 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-5):
 
         # Check convergence
         if rel_error < tol:
+            print(
+                f"Converged at iteration {k} with rank {rank} and relative error {rel_error:.6f}"
+            )
             break
 
         # --- Dual update ---
@@ -95,5 +89,7 @@ def svt(matrix_shape, Omega, b, tau, delta, max_iter=500, tol=1e-5):
         # --- increase rank if needed ---
         # if rank >= r and r < min(n1, n2):
         #     r = min(r * 2, min(n1, n2))
+
+    print(f"Final rank: {rank}, final relative error: {rel_error:.6f}")
 
     return X, history

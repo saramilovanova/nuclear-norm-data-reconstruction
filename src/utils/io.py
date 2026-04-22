@@ -24,15 +24,28 @@ def load_image(path: str | Path, normalize: bool = False) -> np.ndarray:
 def load_netflix_matrix(
     path: str | Path, normalize: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Load Netflix data matrix from CSV, returning filled matrix and mask."""
+    """
+    Load Netflix ratings matrix.
+
+    Assumptions:
+    - Ratings are integers 1-5
+    - Zeros represent missing entries
+    """
+
     df = pd.read_csv(path, index_col=0)
+
+    # Convert to float for SVD / SVT / noise
     X = df.values.astype(np.float64)
 
+    # TRUE observed ratings only
+    mask = X != 0
+
     if normalize:
-        # normalize to [0,1] like images
-        X = (X - 1.0) / 4.0
+        # Normalize ONLY observed entries
+        X_norm = X.copy()
 
-    mask = ~np.isnan(X)
-    X_filled = np.nan_to_num(X, nan=0.0)
+        X_norm[mask] = (X_norm[mask] - 1.0) / 4.0
 
-    return X_filled, mask
+        X = X_norm
+
+    return X, mask

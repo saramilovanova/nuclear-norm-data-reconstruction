@@ -10,13 +10,12 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import numpy as np
 import pandas as pd
-from skimage.io import imread
 
 from src.svt.svt import svt
 from src.utils.masking import create_mask, apply_mask
 from src.utils.noise import add_gaussian_noise
 from src.utils.io import load_image
-from src.utils.metrics import mse, psnr
+from src.utils.metrics import mse, psnr, nmse
 
 from experiments.config import *
 
@@ -28,53 +27,38 @@ RESULTS_PATH.mkdir(parents=True, exist_ok=True)
 def run_reconstruction_experiment(X, sparsity=0.2):
 
     observed_fraction = 1 - sparsity
+    n1, n2 = X.shape
+    tau = 8 * max(n1, n2)
+    # delta = DELTA_FACTOR / observed_fraction # -> caused divergence for higher sparsity levels
+    delta = DELTA_FACTOR
+
     mask = create_mask(X.shape, observed_fraction, seed=SEED)
     Omega, b = apply_mask(X, mask)
 
-    # print("---- DEBUG ----")
-    # print("Omega size:", len(Omega[0]))
-    # print("b mean/std:", np.mean(b), np.std(b))
-    # print("Input min/max:", X.min(), X.max())
-
-    n1, n2 = X.shape
-    tau = TAU_FACTOR * np.sqrt(n1 * n2)
-    delta = DELTA_FACTOR / observed_fraction
-
     X_rec, _ = svt((n1, n2), Omega, b, tau, delta)
-
-    # print(
-    #     "Reconstruction for {}% observed entries:".format(int(observed_fraction * 100))
-    # )
-    print("MSE:", mse(X, X_rec))
-    print("PSNR:", psnr(X, X_rec))
-    return mse(X, X_rec), psnr(X, X_rec)
+    X_rec = np.clip(X_rec, 0, 255)
+    return mse(X, X_rec), nmse(X, X_rec, data_range=255), psnr(X, X_rec, data_range=255)
 
 
 def run_denoising_experiment(X, sigma=0.1):
 
-    Y = add_gaussian_noise(X, sigma)
+    Y = add_gaussian_noise(X, sigma, normalize=True)
 
     # FULL observation
     Omega = np.where(np.ones_like(X, dtype=bool))
     b = Y[Omega]
 
-    # print("---- DEBUG ----")
-    # print("Omega size:", len(Omega[0]))
-    # print("b mean/std:", np.mean(b), np.std(b))
-    # print("Input min/max:", X.min(), X.max())
-
     n1, n2 = X.shape
-    tau = TAU_FACTOR * np.sqrt(n1 * n2)
+    tau = TAU_FACTOR * max(n1, n2)
     delta = DELTA_FACTOR
 
-    X_rec, _ = svt((n1, n2), Omega, b, tau, delta)
-
-    # print("Noisy difference:", np.linalg.norm(X - X_rec))
-
-    # print("\nDenoising with Gaussian noise (σ = {}):".format(sigma))
-    print("MSE:", mse(X, X_rec))
-    print("PSNR:", psnr(X, X_rec))
-    return mse(X, X_rec), psnr(X, X_rec)
+    X_denoised, _ = svt((n1, n2), Omega, b, tau, delta)
+    X_denoised = np.clip(X_denoised, 0, 1)
+    return (
+        mse(X, X_denoised),
+        nmse(X, X_denoised, data_range=1.0),
+        psnr(X, X_denoised, data_range=1.0),
+    )
 
 
 def main():
@@ -83,21 +67,25 @@ def main():
     # Load image
     for img_path in sorted(DATA_PATH.glob("*.png")):
         X = load_image(img_path)
+        X = X[:256, :256]
 
         # --- Reconstruction ---
         for s in SPARSITY_LEVELS:
-            m, p = run_reconstruction_experiment(X, s)
+            m, n, p = run_reconstruction_experiment(X, s)
 
             reconstruction_results.append(
-                {"image": img_path.name, "sparsity": s, "MSE": m, "PSNR": p}
+                {"image": img_path.name, "sparsity": s, "MSE": m, "NMSE": n, "PSNR": p}
             )
+
+        X = load_image(img_path, normalize=True)
+        X = X[:256, :256]
 
         # --- Denoising ---
         for sigma in NOISE_LEVELS:
-            m, p = run_denoising_experiment(X, sigma)
+            m, n, p = run_denoising_experiment(X, sigma)
 
             denoising_results.append(
-                {"image": img_path.name, "sigma": sigma, "MSE": m, "PSNR": p}
+                {"image": img_path.name, "sigma": sigma, "MSE": m, "NMSE": n, "PSNR": p}
             )
 
     # Save results
@@ -111,9 +99,6 @@ def main():
 if __name__ == "__main__":
     # check synthetic image
     # X = np.random.rand(128, 128)
-
-    # X = load_image(DATA_PATH / "0000.png")
-
     # print("Reconstruction results:")
     # run_reconstruction_experiment(X)
     # print("Denoising results:")
