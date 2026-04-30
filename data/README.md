@@ -1,10 +1,15 @@
 # Data
 
-Place raw datasets in this directory.
+This folder contains the datasets used by the experiments in this project.
 
-Recommended layout:
-- raw/: original downloads (do not modify)
-- interim/: intermediate artifacts
-- processed/: model-ready inputs
+## Contents
 
-Large datasets should not be committed. Add dataset-specific folders to .gitignore if needed.
+- `CBSD68/`
+	- Natural image dataset used for image denoising and reconstruction examples.
+- `netflix/`
+	- Movie ratings data used for recommender-system experiments.
+	- Includes `netflix_dense_mtx_0_925_256_movies.csv`.
+
+## Usage
+
+The code in `experiments/` and `notebooks/` expects these datasets to be available in this folder.
