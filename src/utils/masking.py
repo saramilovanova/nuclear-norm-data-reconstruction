@@ -6,6 +6,8 @@ import numpy as np
 
 
 def create_mask(shape, observed_fraction, seed=None):
+    """Create a random binary mask with a given fraction of observed entries.
+    Returns a boolean array where True indicates observed entries."""
     rng = np.random.default_rng(seed)
 
     # mask = np.random.rand(*shape) < observed_fraction

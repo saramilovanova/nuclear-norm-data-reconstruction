@@ -1,0 +1,13 @@
+{
+  "noise_level": 0.1,
+  "noise_type": "symmetric",
+  "rmse_noisy": 0.6668914071399854,
+  "rmse_denoised": 0.7506253277727009,
+  "rmse_improvement": -12.555855381585248,
+  "mae_noisy": 0.1886582206059013,
+  "mae_denoised": 0.5644907496282391,
+  "mae_improvement": -199.21343889245907,
+  "n_atoms": 512,
+  "sparsity": 10,
+  "n_iter": 15
+}
