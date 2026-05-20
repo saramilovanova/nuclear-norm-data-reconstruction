@@ -1,22 +1,10 @@
 """
-Option A: K-SVD Recommender with Error-Goal Reconstruction
+K-SVD Recommender with Error-Goal Reconstruction
 ============================================================
 
-This approach:
 1. Trains K-SVD on the observed ratings matrix (masked OMP only)
 2. Reconstructs held-out entries using error-goal OMP (no dict update on test data)
 3. Matches the paper's sparse coding + reconstruction paradigm
-
-Advantages:
-- Stable convergence
-- Simpler to implement
-- Close to the paper's Section VI-A procedure
-- Good for thesis exposition
-
-Tradeoff:
-- Dictionary is trained on the full observed matrix, not updated on test entries
-- Less "online" adaptation than fill-in approach
-- But more stable and theoretically grounded
 """
 
 from __future__ import annotations
@@ -115,7 +103,7 @@ def ksvd_recommender_error_goal(
 
     Procedure:
     1. User mean-center the ratings matrix
-    2. Transpose to (n_items, n_users) convention
+    2. Transpose to (n_items, n_users) for K-SVD convention
     3. Train K-SVD with masked OMP (sparsity) on observed entries
     4. Reconstruct via D @ X with full dictionary
     5. Restore user means

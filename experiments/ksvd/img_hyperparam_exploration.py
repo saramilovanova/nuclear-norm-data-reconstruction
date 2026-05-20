@@ -1,4 +1,13 @@
+from __future__ import annotations
+
+import sys
 from pathlib import Path
+
+# Ensure imports from the src package work regardless of launch directory.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import time
 import pandas as pd
 import numpy as np
@@ -12,7 +21,7 @@ from src.utils.io import load_image
 from src.utils.noise import add_gaussian_noise
 from src.utils.metrics import psnr, nrmse
 
-IMAGE_PATH = Path("data/CBSD68")
+DATA_PATH = Path("nuclear-norm-data-reconstruction/data/CBSD68")
 
 DICT_SIZES = [128, 256, 441, 512]
 SPARSITIES = [2, 4, 6, 8]
@@ -20,7 +29,7 @@ SPARSITIES = [2, 4, 6, 8]
 results = []
 
 # Representative image
-X = load_image(IMAGE_PATH / "0047.png")
+X = load_image(DATA_PATH / "0047.png")
 X = X[:256, :256]
 
 # Add noise

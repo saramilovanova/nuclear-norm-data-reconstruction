@@ -1,16 +1,13 @@
 """
-Phase 2 (Corrected): K-SVD Denoising WITHOUT User Mean-Centering
+K-SVD Denoising
 ==================================================================
-
-Key change: Removed user mean-centering, which was reintroducing noise.
+Removed user mean-centering, which was reintroducing noise.
 
 For denoising (unlike reconstruction), we should:
 1. Train K-SVD directly on the noisy matrix (no preprocessing)
 2. Minimize reconstruction error on all entries
 3. Clip reconstructed values to valid range
 4. Evaluate against clean ground truth
-
-Closer to standard denoising practices.
 """
 
 import numpy as np
@@ -27,10 +24,6 @@ from src.ksvd.ksvd import ksvd, initialize_dictionary
 from src.utils.io import load_netflix_matrix
 from src.utils.noise import add_symmetric_noise
 
-# ─────────────────────────────────────────────────────────────
-# Configuration
-# ─────────────────────────────────────────────────────────────
-
 DATA_PATH = Path("nuclear-norm-data-reconstruction/data/netflix")
 OUTPUT_PATH = Path(
     "nuclear-norm-data-reconstruction/results/ksvd/recommender/denoising"
@@ -41,26 +34,16 @@ OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 NOISE_LEVEL = 0.1
 NOISE_TYPE = "symmetric"
 
-# K-SVD parameters — UPDATED based on Fix 2 & 3
+# K-SVD parameters
 N_ATOMS = 1024  # Increased from 512 (4× overcomplete)
 SPARSITY_TRAIN = 20  # Increased from 10
 N_ITER = 20  # Slightly more iterations
 SEED = 42
 
 print("=" * 70)
-print("PHASE 2 (CORRECTED): K-SVD DENOISING WITHOUT MEAN-CENTERING")
+print("K-SVD DENOISING")
 print("=" * 70)
 print()
-print("Key changes:")
-print("  - Removed user mean-centering (was reintroducing noise)")
-print("  - Increased N_ATOMS from 512 to 1024")
-print("  - Increased SPARSITY_TRAIN from 10 to 20")
-print("=" * 70)
-print()
-
-# ─────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────
 
 
 def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -71,17 +54,13 @@ def mae(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean(np.abs(y_true - y_pred)))
 
 
-# ─────────────────────────────────────────────────────────────
-# Load clean matrix
-# ─────────────────────────────────────────────────────────────
-
 print("Loading clean Netflix matrix...")
 R_clean, original_mask = load_netflix_matrix(
     DATA_PATH / "netflix_dense_mtx_0_925_256_movies.csv"
 )
 
 n_users, n_items = R_clean.shape
-print(f"Shape: {n_users} users × {n_items} items")
+print(f"Shape: {n_users} users x {n_items} items")
 print(
     f"Observed: {original_mask.sum()} / {original_mask.size} "
     f"({100*original_mask.mean():.1f}%)"
@@ -91,10 +70,6 @@ print(
     f"{R_clean[original_mask].max():.1f}]"
 )
 print()
-
-# ─────────────────────────────────────────────────────────────
-# Add noise
-# ─────────────────────────────────────────────────────────────
 
 print(f"Adding {NOISE_TYPE} noise (p={NOISE_LEVEL})...")
 if NOISE_TYPE == "symmetric":
@@ -113,17 +88,14 @@ print(
 )
 
 # Compute baseline error
+rmse_corrupted_before = np.sqrt(np.mean((R_clean[flip_mask] - R_noisy[flip_mask]) ** 2))
+print("Corrupted entries RMSE (before denoising):", rmse_corrupted_before)
 rmse_noisy = rmse(R_clean[original_mask], R_noisy[original_mask])
 mae_noisy = mae(R_clean[original_mask], R_noisy[original_mask])
 print(f"Noise RMSE: {rmse_noisy:.4f}, MAE: {mae_noisy:.4f}")
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Prepare for K-SVD: NO MEAN-CENTERING
-# ─────────────────────────────────────────────────────────────
-
 print("Preparing data for K-SVD...")
-print("  NOTE: NOT subtracting user means (this was reintroducing noise)")
 print()
 
 # Transpose to K-SVD convention: (n_items, n_users)
@@ -132,10 +104,6 @@ Y = R_noisy.T  # (256, n_users)
 print(f"Y shape: {Y.shape}")
 print(f"Y value range: [{Y.min():.2f}, {Y.max():.2f}]")
 print()
-
-# ─────────────────────────────────────────────────────────────
-# Initialize dictionary
-# ─────────────────────────────────────────────────────────────
 
 print("Initializing dictionary...")
 D = initialize_dictionary(
@@ -147,11 +115,8 @@ D = initialize_dictionary(
 print(f"Dictionary shape: {D.shape}")
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Train K-SVD on NOISY data (no masks, no mean-centering)
-# ─────────────────────────────────────────────────────────────
 
-print("Training K-SVD on noisy data (no mean-centering)...")
+print("Training K-SVD on noisy data...")
 print(f"  n_atoms={N_ATOMS}, sparsity={SPARSITY_TRAIN}, n_iter={N_ITER}")
 print()
 
@@ -161,16 +126,12 @@ D, X, history = ksvd(
     sparsity=SPARSITY_TRAIN,
     n_iter=N_ITER,
     initial_dictionary=D,
-    masks=None,
+    masks=original_mask.T.astype(bool),  # (n_items, n_users)
     fixed_atoms=0,
     random_state=SEED,
     verbose=True,
 )
 print()
-
-# ─────────────────────────────────────────────────────────────
-# Reconstruct (denoise)
-# ─────────────────────────────────────────────────────────────
 
 print("Reconstructing (denoising)...")
 Y_denoised = D @ X
@@ -184,16 +145,22 @@ R_denoised = np.clip(R_denoised, 1, 5)
 print(f"Denoised rating range: [{R_denoised.min():.1f}, {R_denoised.max():.1f}]")
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Evaluation
-# ─────────────────────────────────────────────────────────────
 
 print("=" * 70)
-print("DENOISING RESULTS (CORRECTED)")
+print("DENOISING RESULTS")
 print("=" * 70)
 
 # Evaluate on all observed entries
 mask_obs = original_mask
+clean_mask = original_mask & (~flip_mask)
+
+rmse_corrupted_after = np.sqrt(
+    np.mean((R_clean[flip_mask] - R_denoised[flip_mask]) ** 2)
+)
+print("Corrupted entries RMSE (after denoising):", rmse_corrupted_after)
+
+rmse_clean_after = np.sqrt(np.mean((R_clean[clean_mask] - R_denoised[clean_mask]) ** 2))
+print("Clean entries RMSE (after denoising):", rmse_clean_after)
 
 rmse_denoised = rmse(R_clean[mask_obs], R_denoised[mask_obs])
 mae_denoised = mae(R_clean[mask_obs], R_denoised[mask_obs])
@@ -214,16 +181,6 @@ print(f"\nImprovement:")
 print(f"  RMSE: {rmse_improvement:+.1f}%")
 print(f"  MAE:  {mae_improvement:+.1f}%")
 
-print()
-print("For comparison:")
-print("  (Previous attempt, with mean-centering): RMSE -12.6%, MAE -199.2%")
-print("  SVT (different algorithm): RMSE -1.7% (tiny but positive)")
-print("=" * 70)
-print()
-
-# ─────────────────────────────────────────────────────────────
-# Per-user analysis
-# ─────────────────────────────────────────────────────────────
 
 user_error_noisy = np.sqrt(np.mean((R_clean - R_noisy) ** 2, axis=1))
 user_error_denoised = np.sqrt(np.mean((R_clean - R_denoised) ** 2, axis=1))
@@ -238,10 +195,7 @@ print(f"  Max improvement: {improvement_per_user.max():+.1f}%")
 print(f"  Users with improvement: {(improvement_per_user > 0).sum()} / {n_users}")
 print()
 
-# ─────────────────────────────────────────────────────────────
 # Convergence plot
-# ─────────────────────────────────────────────────────────────
-
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
 # Objective
@@ -312,10 +266,6 @@ plt.tight_layout()
 plt.savefig(OUTPUT_PATH / "convergence_and_errors.png", dpi=150)
 plt.show()
 
-# ─────────────────────────────────────────────────────────────
-# Matrix visualization
-# ─────────────────────────────────────────────────────────────
-
 
 def show_denoising_results(
     R_clean, R_noisy, R_denoised, mask, n_users_show=100, n_items_show=256, title=""
@@ -355,10 +305,6 @@ show_denoising_results(
     title=f"K-SVD Denoising (Corrected: no mean-centering)\n"
     f"K={N_ATOMS}, T={SPARSITY_TRAIN}, σ={NOISE_LEVEL}",
 )
-
-# ─────────────────────────────────────────────────────────────
-# Error distribution
-# ─────────────────────────────────────────────────────────────
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
@@ -412,32 +358,6 @@ plt.tight_layout()
 plt.savefig(OUTPUT_PATH / "error_distribution.png", dpi=150)
 plt.show()
 
-# ─────────────────────────────────────────────────────────────
-# Summary
-# ─────────────────────────────────────────────────────────────
-
-print("=" * 70)
-print("SUMMARY")
-print("=" * 70)
-print()
-print("Fixes applied:")
-print("  1. Removed user mean-centering (was reintroducing noise)")
-print("  2. Increased N_ATOMS from 512 to 1024 (4× overcomplete)")
-print("  3. Increased SPARSITY_TRAIN from 10 to 20")
-print()
-print("Result:")
-if rmse_improvement > 0:
-    print(f"  ✓ RMSE improved by {rmse_improvement:.1f}%")
-else:
-    print(f"  ✗ RMSE still degraded by {abs(rmse_improvement):.1f}%")
-print()
-
-if rmse_improvement > 0:
-    print("Conclusion: K-SVD denoising now works correctly!")
-else:
-    print("Conclusion: Even with corrections, K-SVD does not improve denoising.")
-    print("           This suggests K-SVD is fundamentally not suited to this task.")
-    print("           (Focus on reconstruction results instead)")
 
 print()
 print(f"Results saved to {OUTPUT_PATH}")

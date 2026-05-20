@@ -1,0 +1,77 @@
+======================================================================
+K-SVD DENOISING
+======================================================================
+
+Loading clean Netflix matrix...
+Shape: 4367 users x 256 items
+Observed: 1034723 / 1117952 (92.6%)
+Clean rating range: [1.0, 5.0]
+
+Adding symmetric noise (p=0.1)...
+Noisy rating range: [1.0, 5.0]
+Corrupted entries RMSE (before denoising): 2.111226176327565
+Noise RMSE: 0.6669, MAE: 0.1887
+
+Preparing data for K-SVD...
+
+Y shape: (256, 4367)
+Y value range: [1.00, 5.00]
+
+Initializing dictionary...
+Dictionary shape: (256, 1024)
+
+Training K-SVD on noisy data...
+  n_atoms=1024, sparsity=20, n_iter=20
+
+iter 01: objective = 3.166904e+05
+iter 02: objective = 2.791309e+05, rel_change = 1.186e-01
+iter 03: objective = 2.632456e+05, rel_change = 5.691e-02
+iter 04: objective = 2.542543e+05, rel_change = 3.416e-02
+iter 05: objective = 2.488705e+05, rel_change = 2.118e-02
+iter 06: objective = 2.452306e+05, rel_change = 1.463e-02
+iter 07: objective = 2.425299e+05, rel_change = 1.101e-02
+iter 08: objective = 2.403217e+05, rel_change = 9.105e-03
+iter 09: objective = 2.382581e+05, rel_change = 8.587e-03
+iter 10: objective = 2.361850e+05, rel_change = 8.701e-03
+iter 11: objective = 2.340979e+05, rel_change = 8.837e-03
+iter 12: objective = 2.325920e+05, rel_change = 6.433e-03
+iter 13: objective = 2.331986e+05, rel_change = 2.608e-03
+iter 14: objective = 2.341728e+05, rel_change = 4.178e-03
+iter 15: objective = 2.325474e+05, rel_change = 6.941e-03
+iter 16: objective = 2.303764e+05, rel_change = 9.336e-03
+iter 17: objective = 2.289436e+05, rel_change = 6.219e-03
+iter 18: objective = 2.275458e+05, rel_change = 6.105e-03
+iter 19: objective = 2.266784e+05, rel_change = 3.812e-03
+iter 20: objective = 2.260677e+05, rel_change = 2.694e-03
+
+Reconstructing (denoising)...
+Denoised rating range: [1.0, 5.0]
+
+======================================================================
+DENOISING RESULTS
+======================================================================
+Corrupted entries RMSE (after denoising): 1.6669856327171617
+Clean entries RMSE (after denoising): 0.42940462432599236
+
+Input (noisy):
+  RMSE: 0.6669
+  MAE:  0.1887
+
+Output (denoised):
+  RMSE: 0.6658
+  MAE:  0.4393
+
+Improvement:
+  RMSE: +0.2%
+  MAE:  -132.8%
+
+Per-user improvement statistics:
+  Mean improvement: -50.8%
+  Median improvement: -49.2%
+  Min improvement: -164.7%
+  Max improvement: +23.5%
+  Users with improvement: 44 / 4367
+
+
+Results saved to /d/hpc/home/sm79111/thesis/results/ksvd/denoising
+======================================================================

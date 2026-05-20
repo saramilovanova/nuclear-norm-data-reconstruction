@@ -1,8 +1,5 @@
 """
-Test: K-SVD Recommender — Option A (Error-Goal Reconstruction)
-===============================================================
-
-This is the simpler, more stable approach. Use this first.
+Test: K-SVD Recommender (Error-Goal Reconstruction)
 """
 
 import sys
@@ -17,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from ksvd_recommender_option_a import (
+from ksvd_recommender_rec import (
     create_train_test_split,
     ksvd_recommender_error_goal,
     reconstruct_with_error_goal,
@@ -26,21 +23,14 @@ from ksvd_recommender_option_a import (
 
 from src.utils.io import load_netflix_matrix
 
-# ─────────────────────────────────────────────────────────────
-# Configuration
-# ─────────────────────────────────────────────────────────────
-
 DATA_PATH = Path("nuclear-norm-data-reconstruction/data/netflix")
-N_ATOMS = 256
-SPARSITY_TRAIN = 10
-N_ITER = 20
+N_ATOMS = 1024  # 2× overcomplete dictionary
+SPARSITY_TRAIN = 12
+N_ITER = 15
 EPSILON = 0.5  # error tolerance in rating points
 TEST_FRACTION = 0.1  # hold out 10% of observed ratings
 SEED = 42
 
-# ─────────────────────────────────────────────────────────────
-# Load and prepare data
-# ─────────────────────────────────────────────────────────────
 
 print("Loading Netflix matrix...")
 R_full, original_mask = load_netflix_matrix(
@@ -48,7 +38,7 @@ R_full, original_mask = load_netflix_matrix(
 )
 
 n_users, n_items = R_full.shape
-print(f"Shape: {n_users} users × {n_items} items")
+print(f"Shape: {n_users} users x {n_items} items")
 print(
     f"Observed: {original_mask.sum()} / {original_mask.size} "
     f"({100*original_mask.mean():.1f}%)"
@@ -58,10 +48,6 @@ print(
     f"{R_full[original_mask].max():.1f}]"
 )
 print()
-
-# ─────────────────────────────────────────────────────────────
-# Train/test split (within observed ratings)
-# ─────────────────────────────────────────────────────────────
 
 print(f"Creating train/test split ({TEST_FRACTION*100:.0f}% holdout)...")
 R_train, train_mask, test_mask = create_train_test_split(
@@ -79,10 +65,6 @@ print(
 )
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Train K-SVD
-# ─────────────────────────────────────────────────────────────
-
 print("Training K-SVD...")
 D, X_train, user_means, history = ksvd_recommender_error_goal(
     R_train,
@@ -95,15 +77,12 @@ D, X_train, user_means, history = ksvd_recommender_error_goal(
 )
 print()
 
-# ─────────────────────────────────────────────────────────────
 # Convergence plot
-# ─────────────────────────────────────────────────────────────
-
 plt.figure(figsize=(8, 4))
 plt.plot(range(1, len(history) + 1), history, marker="o", markersize=4)
 plt.xlabel("Iteration")
 plt.ylabel("Masked Reconstruction Error")
-plt.title("K-SVD Training Convergence (Option A)")
+plt.title("K-SVD Training Convergence")
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
@@ -113,9 +92,6 @@ print("Objective values should be monotonically decreasing (or increasing slight
 print("only if the algorithm is unstable).")
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Reconstruct on test data with error-goal OMP
-# ─────────────────────────────────────────────────────────────
 
 print("Reconstructing test entries with error-goal OMP...")
 R_reconstructed = reconstruct_with_error_goal(
@@ -127,26 +103,17 @@ R_reconstructed = reconstruct_with_error_goal(
 )
 print()
 
-# ─────────────────────────────────────────────────────────────
-# Evaluation
-# ─────────────────────────────────────────────────────────────
-
 metrics = evaluate_recommender(R_full, R_reconstructed, test_mask)
 
 print("=" * 50)
-print("RESULTS (Option A - Error-Goal Reconstruction)")
+print("RESULTS FOR K-SVD RECOMMENDER (ERROR-GOAL RECONSTRUCTION)")
 print("=" * 50)
 print(f"RMSE: {metrics['rmse']:.6f}")
 print(f"MAE:  {metrics['mae']:.6f}")
 print()
 print("For comparison:")
-print("  SVT (0.4 missing): RMSE = 0.761, MAE = 0.595")
-print("  Fill-in k-SVD (0.1 holdout): RMSE = 0.939, MAE = 0.717")
+print("  SVT (10% missing): RMSE = 0.7493, MAE = 0.5811")
 print("=" * 50)
-
-# ─────────────────────────────────────────────────────────────
-# Visualisation
-# ─────────────────────────────────────────────────────────────
 
 
 def show_matrix_results(
