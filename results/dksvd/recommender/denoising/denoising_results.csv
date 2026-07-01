@@ -1,0 +1,2 @@
+noise_level,patch_size,n_atoms,T,n_epochs,rmse_noisy,rmse_all_observed,mae_all_observed,rmse_corrupted_entries,rmse_clean_entries
+0.1,8,64,7,200,0.6668914071399854,0.5453096272406858,0.28996932619597143,1.5025896463774016,0.2829713583460153

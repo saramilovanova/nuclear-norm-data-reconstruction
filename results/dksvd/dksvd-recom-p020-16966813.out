@@ -1,0 +1,34 @@
+Node        : wn218
+Noise level : 0.20
+Start       : Wed Jun 24 11:44:40 PM CEST 2026
+Tesla V100S-PCIE-32GB, 32768 MiB
+Device      : cuda:0
+Noise level : 0.2
+Seeds       : [0, 1, 2, 3, 4]
+
+Loading Netflix matrix...
+Shape : 4367 users × 256 movies
+Train users : 3493  |  Test users : 874
+
+── Run 1/5  (seed=0) ──────────────────
+   RMSE: 0.7005  MAE: 0.4586  PSNR: 15.1325 dB
+── Run 2/5  (seed=1) ──────────────────
+   RMSE: 0.7071  MAE: 0.4595  PSNR: 15.0518 dB
+── Run 3/5  (seed=2) ──────────────────
+   RMSE: 0.7011  MAE: 0.4567  PSNR: 15.1252 dB
+── Run 4/5  (seed=3) ──────────────────
+   RMSE: 0.7053  MAE: 0.4559  PSNR: 15.0734 dB
+── Run 5/5  (seed=4) ──────────────────
+   RMSE: 0.6996  MAE: 0.4508  PSNR: 15.1438 dB
+
+============================================================
+RESULTS  p=0.2  (mean ± std over 5 seeds)
+============================================================
+  rmse_all_observed             : 0.7027 ± 0.0033
+  mae_all_observed              : 0.4563 ± 0.0034
+  psnr                          : 15.1053 ± 0.0403
+  rmse_corrupted_entries        : 1.3164 ± 0.0050
+  rmse_clean_entries            : 0.4295 ± 0.0028
+
+Saved → /d/hpc/home/sm79111/thesis/results/deep_ksvd/recommender/denoising/denoising_results_summary_p020.csv
+Finished : Thu Jun 25 07:57:44 AM CEST 2026

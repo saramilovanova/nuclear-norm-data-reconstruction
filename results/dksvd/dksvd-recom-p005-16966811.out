@@ -1,0 +1,34 @@
+Node        : gwn03
+Noise level : 0.05
+Start       : Wed Jun 24 11:44:39 PM CEST 2026
+NVIDIA H100 PCIe, 81559 MiB
+Device      : cuda:0
+Noise level : 0.05
+Seeds       : [0, 1, 2, 3, 4]
+
+Loading Netflix matrix...
+Shape : 4367 users × 256 movies
+Train users : 3493  |  Test users : 874
+
+── Run 1/5  (seed=0) ──────────────────
+   RMSE: 0.4167  MAE: 0.1754  PSNR: 19.6454 dB
+── Run 2/5  (seed=1) ──────────────────
+   RMSE: 0.4195  MAE: 0.1769  PSNR: 19.5860 dB
+── Run 3/5  (seed=2) ──────────────────
+   RMSE: 0.4177  MAE: 0.1746  PSNR: 19.6234 dB
+── Run 4/5  (seed=3) ──────────────────
+   RMSE: 0.4156  MAE: 0.1699  PSNR: 19.6678 dB
+── Run 5/5  (seed=4) ──────────────────
+   RMSE: 0.4175  MAE: 0.1782  PSNR: 19.6275 dB
+
+============================================================
+RESULTS  p=0.05  (mean ± std over 5 seeds)
+============================================================
+  rmse_all_observed             : 0.4174 ± 0.0015
+  mae_all_observed              : 0.1750 ± 0.0032
+  psnr                          : 19.6300 ± 0.0302
+  rmse_corrupted_entries        : 1.7006 ± 0.0134
+  rmse_clean_entries            : 0.1752 ± 0.0042
+
+Saved → /d/hpc/home/sm79111/thesis/results/deep_ksvd/recommender/denoising/denoising_results_summary_p005.csv
+Finished : Thu Jun 25 06:44:07 AM CEST 2026
