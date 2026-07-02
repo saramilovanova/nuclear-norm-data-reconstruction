@@ -197,7 +197,12 @@ def run_single(R_clean, original_mask, train_idx, test_idx,
 
             optimizer.zero_grad()
             # Loss on visible entries only (recon_mask = True entries)
-            loss = criterion(model(x)[0, 0][recon_mask], target[recon_mask])
+            # loss = criterion(model(x)[0, 0][recon_mask], target[recon_mask])
+
+            # Train on held-out entries only - directly supervise what you want to predict
+            held_out = original_mask[i] & ~recon_mask
+            loss = criterion(model(x)[0, 0][held_out], target[held_out])
+
             loss.backward()
             optimizer.step()
 
